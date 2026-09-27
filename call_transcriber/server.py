@@ -12,6 +12,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from .batch import Batch, discover
 from .resources import plan, snapshot
+from .picker import choose_folder, mounted_folder
 
 WEB = Path(__file__).parent / 'web'
 
@@ -19,11 +20,13 @@ WEB = Path(__file__).parent / 'web'
 class AppServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address, folder=None):
+    def __init__(self, address, folder=None, container=False):
         super().__init__(address, Handler)
         self.token = secrets.token_urlsafe(32)
         self.batch = Batch()
-        self.folder = str(Path(folder).expanduser().resolve()) if folder else str(Path.home())
+        self.container = container
+        self.picker_lock = threading.Lock()
+        self.folder = str(Path(folder).expanduser().resolve()) if folder else ""
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -68,18 +71,9 @@ class Handler(BaseHTTPRequestHandler):
             if url.path == '/api/state':
                 query = parse_qs(url.query)
                 offset = max(0, int(query.get('offset', ['0'])[0]))
-                self.send(200, self.server.batch.view(offset, 100))
+                self.send(200, self.server.batch.view(0, 10))
             elif url.path == '/api/info':
-                self.send(200, dict(folder=self.server.folder, resources=snapshot(0).public()))
-            elif url.path == '/api/folders':
-                query = parse_qs(url.query)
-                folder = Path(query.get('path', [self.server.folder])[0]).expanduser().resolve(strict=True)
-                if not folder.is_dir():
-                    raise ValueError('Укажите существующую папку.')
-                directories = sorted((p for p in folder.iterdir() if p.is_dir() and not p.name.startswith('.')
-                                      and not p.is_symlink()), key=lambda p: p.name.casefold())
-                self.send(200, dict(path=str(folder), parent=str(folder.parent),
-                                    directories=[dict(name=p.name, path=str(p)) for p in directories]))
+                self.send(200, dict(folder=self.server.folder, resources=snapshot(0).public(), picker="mounted" if self.server.container else "native"))
             elif url.path == '/api/result':
                 identity = int(parse_qs(url.query)['id'][0])
                 if identity < 0:
@@ -109,17 +103,30 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 <= length <= 16_384:
                 raise ValueError('Слишком большой запрос.')
             data = json.loads(self.rfile.read(length) or b'{}')
-            if self.path == '/api/preview':
+            if self.path == '/api/pick-folder':
+                if self.server.container:
+                    raise ValueError('Используйте системный выбор папки в браузере.')
+                if not self.server.picker_lock.acquire(blocking=False):
+                    raise ValueError('Окно выбора папки уже открыто.')
+                try:
+                    self.send(200, dict(folder=choose_folder()))
+                finally:
+                    self.server.picker_lock.release()
+            elif self.path == '/api/pick-mounted':
+                if not self.server.container:
+                    raise ValueError('Выбор подключённой папки доступен только в контейнере.')
+                self.send(200, dict(folder=mounted_folder(data['nonce'])))
+            elif self.path == '/api/preview':
                 jobs = discover(data['folder'])
                 resources = snapshot()
                 pending = sum(j['status'] == 'pending' for j in jobs)
-                self.send(200, dict(jobs=jobs[:100], total=len(jobs), plan=plan(resources, pending), pending=pending))
+                self.send(200, dict(total=len(jobs), plan=plan(resources, pending, parallel=data.get("parallel", "auto")), pending=pending))
             elif self.path == '/api/start':
-                self.server.batch.start(data['folder'])
-                self.send(202, self.server.batch.view(0, 100))
+                self.server.batch.start(data['folder'], data.get('parallel', 'auto'))
+                self.send(202, self.server.batch.view(0, 10))
             elif self.path == '/api/cancel':
                 self.server.batch.cancel()
-                self.send(200, self.server.batch.view(0, 100))
+                self.send(200, self.server.batch.view(0, 10))
             else:
                 self.send(404, dict(error='Не найдено'))
         except (OSError, ValueError, KeyError, TypeError) as error:
@@ -133,7 +140,7 @@ def main():
     parser.add_argument('--no-browser', action='store_true')
     parser.add_argument('--container', action='store_true', help='Bind inside a container; publish only to host loopback')
     args = parser.parse_args()
-    server = AppServer(('0.0.0.0' if args.container else '127.0.0.1', args.port), args.folder)
+    server = AppServer(('0.0.0.0' if args.container else '127.0.0.1', args.port), args.folder, args.container)
     url = f'http://127.0.0.1:{server.server_port}/#{server.token}'
     print(f'Откройте интерфейс: {url}', flush=True)
     if not args.no_browser:

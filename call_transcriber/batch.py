@@ -14,13 +14,15 @@ import time
 import uuid
 
 import psutil
-from .resources import plan, reserve_bytes, snapshot, worker_memory
+from .resources import plan, reserve_bytes, snapshot, worker_memory, validate_parallel
 from .runtime import GIB, ensure_models, ffmpeg
 
 EXTENSIONS = {'.mp3', '.wav', '.m4a', '.flac', '.ogg', '.opus', '.aac', '.aiff', '.aif', '.wma', '.mp4'}
 
 
 def discover(folder):
+    if not isinstance(folder, (str, Path)) or not str(folder).strip():
+        raise ValueError("Сначала выберите папку со звонками.")
     target = Path(folder).expanduser().resolve(strict=True)
     root = target if target.is_dir() else target.parent
     sources, errors = [], []
@@ -81,7 +83,8 @@ class Batch:
             page['pending'] = sum(j['status'] == 'pending' for j in jobs)
             page['active_jobs'] = [j for j in jobs if j['status'] == 'running'][:5]
             completed = [j for j in jobs if j['status'] == 'done']
-            page['recent'] = sorted(completed, key=lambda j: j.get('finished_at', 0), reverse=True)[:4]
+            recent = [j for j in jobs if j['status'] in {'done', 'error', 'cancelled'}]
+            page['recent'] = sorted(recent, key=lambda j: j.get('finished_at', 0), reverse=True)[:10 - len(page['active_jobs'])]
             page['duration'] = sum(j.get('duration', 0) for j in jobs)
             page['eta'] = (sum(j.get('result', {}).get('elapsed', 0) for j in completed) / max(1, len(completed))
                            * (page['pending'] + self.state['active']) / max(1, (self.state.get('plan') or {}).get('parallel', 1)))
@@ -101,7 +104,8 @@ class Batch:
                 self.state['events'] = [dict(time=time.strftime('%H:%M:%S'), text=values['message'])] + self.state.get('events', [])[:9]
             self.state.update(values)
 
-    def start(self, folder):
+    def start(self, folder, parallel="auto"):
+        validate_parallel(parallel)
         with self.lock:
             if self.thread and self.thread.is_alive():
                 raise ValueError('Обработка уже запущена. Дождитесь завершения или нажмите «Остановить».')
@@ -110,7 +114,7 @@ class Batch:
                 raise ValueError('Аудиофайлы не найдены. Выберите папку с MP3 или WAV.')
             self.cancelled.clear()
             self.state = dict(phase='preparing', message='Проверка ресурсов и записей…',
-                              folder=str(Path(folder).expanduser().resolve()), jobs=jobs, plan=None, active=0)
+                              folder=str(Path(folder).expanduser().resolve()), jobs=jobs, plan=None, active=0, mode=parallel)
             self.thread = threading.Thread(target=self._run, daemon=True)
             self.thread.start()
 
@@ -189,7 +193,7 @@ class Batch:
             self.update(phase='done', message='Все расшифровки уже есть. Существующие TXT сохранены.')
             return
         resources = snapshot()
-        initial = plan(resources, len(pending))
+        initial = plan(resources, len(pending), parallel=self.state.get("mode", "auto"))
         self.update(plan=initial)
         if initial['parallel'] == 0:
             raise RuntimeError('Недостаточно свободной памяти для одной записи. Закройте тяжёлые приложения и повторите. ' + initial['reason'])
@@ -252,7 +256,7 @@ class Batch:
                         if success and not calibrated:
                             calibrated = True
                             longest = max((j['duration'] for j in pending), default=0)
-                            selected = plan(snapshot(), len(pending) or 1, peak, longest)
+                            selected = plan(snapshot(), len(pending) or 1, peak, longest, self.state.get("mode", "auto"))
                             limit = max(1, selected['parallel'])
                             threads = selected['threads']
                             selected['measured_peak_gb'] = round(peak / GIB, 2)

@@ -13,3 +13,6 @@
 - User additions require step-by-step and AI manuals, WAV, and measured memory stability on large queues. UI pagination and bounded process lifetime address queue-scale memory.
 - Browser tool failure: shared Chrome caches failed signature verification. Isolated installation also retained an invalid signature; repairing the isolated app signature is the next diagnostic correction. Shared caches remain untouched.
 - Memory soak exposed transient host-pressure failure after three completed files: admission control ended the queue when free memory briefly dropped. This violates resilient large-queue handling. Keep the architecture and reserve unchanged; pause new admissions and retain the queue until memory returns or the user cancels. Peak parent memory did not grow and no workers survived the initial stop.
+
+- Latest UI corrections: remove the full queue/browser modal; use native OS directory selection, bounded ten-record history, and auto/manual 1–5 admission. Manual mode retains memory reservation and first-file calibration. Container selection maps a transient browser-created marker inside the mounted root without audio uploads.
+- Container ARM check failed on missing libgomp.so.1; install the required libgomp1 runtime library without changing the locked model dependencies.

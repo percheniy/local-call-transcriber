@@ -38,11 +38,11 @@ class ServerTests(unittest.TestCase):
         batch = Batch()
         template = dict(status='done', percent=100, relative='call.wav', id=0, error='', warnings=[])
         batch.state['jobs'] = [dict(template, id=i) for i in range(10000)]
-        result = batch.view(500, 100)
-        self.assertEqual(len(result['jobs']), 100)
-        self.assertEqual(result['jobs'][0]['id'], 500)
+        result = batch.view(0, 10)
+        self.assertEqual(len(result['jobs']), 10)
+        self.assertEqual(result['jobs'][0]['id'], 0)
         self.assertEqual(result['total'], 10000)
-        self.assertEqual(len(result['recent']), 4)
+        self.assertEqual(len(result['recent']), 10)
         self.assertLess(len(json.dumps(result)), 25000)
 
 

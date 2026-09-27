@@ -1,0 +1,24 @@
+name: Container
+on: [push, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  image:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build CPU image
+        run: docker build -t call-transcriber:test .
+      - name: Runtime import check
+        run: docker run --rm call-transcriber:test python -c 'import gigaam; from nemo.collections.asr.models import SortformerEncLabelModel'
+      - name: Real MP3 and WAV smoke test
+        run: |
+          mkdir -p /tmp/call-smoke/nested
+          curl -fL https://cdn.chatwm.opensmodel.sberdevices.ru/GigaAM/example.wav -o /tmp/call-smoke/nested/example.wav
+          docker run --rm --user "$(id -u):$(id -g)" --mount type=bind,source=/tmp/call-smoke,target=/calls call-transcriber:test python -c 'import subprocess; from call_transcriber.runtime import ffmpeg; subprocess.run([ffmpeg(),"-i","/calls/nested/example.wav","/calls/example.mp3"],check=True)'
+          docker run --rm --user "$(id -u):$(id -g)" --mount type=bind,source=/tmp/call-smoke,target=/calls -e CALL_TRANSCRIBER_MODELS=/tmp/models call-transcriber:test transcribe-folder /calls
+          test -s /tmp/call-smoke/transcription/example.mp3.txt
+          test -s /tmp/call-smoke/nested/transcription/example.wav.txt

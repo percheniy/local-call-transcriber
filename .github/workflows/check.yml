@@ -1,0 +1,27 @@
+name: Checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.11.6'
+      - run: uv sync --frozen --python 3.11
+      - run: uv run python -m unittest discover -s tests -v
+      - name: Import inference runtimes
+        run: uv run python -c 'import gigaam; from nemo.collections.asr.models import SortformerEncLabelModel; from call_transcriber.runtime import ffmpeg; print(ffmpeg())'
+      - name: Download official sample and run both models
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p /tmp/call-smoke
+          curl -fL https://cdn.chatwm.opensmodel.sberdevices.ru/GigaAM/example.wav -o /tmp/call-smoke/example.wav
+          uv run transcribe-folder /tmp/call-smoke
+          test -s /tmp/call-smoke/transcription/example.wav.txt
+          test -z "$(find /tmp/call-smoke -name '*.json' -print)"

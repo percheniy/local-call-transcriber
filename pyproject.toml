@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-call-transcriber"
+version = "1.0.0"
+description = "Local Russian call transcription: GigaAM v3, Sortformer, adaptive folder queue"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = "MIT"
+dependencies = [
+  "gigaam @ https://github.com/salute-developers/GigaAM/archive/7447938d791c4f3e643386ee22c33777004293a5.zip",
+  "nemo_toolkit[asr]==2.7.2", "torch==2.8.0", "torchaudio==2.8.0",
+  "transformers==4.57.6", "numpy>=2,<2.5", "psutil>=6,<8",
+  "imageio-ffmpeg==0.6.0", "platformdirs>=4,<5", "filelock>=3,<5",
+]
+
+[project.scripts]
+call-transcriber = "call_transcriber.server:main"
+transcribe-folder = "call_transcriber.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["call_transcriber*"]
+
+[tool.setuptools.package-data]
+call_transcriber = ["web/*.html", "web/*.css", "web/*.js", "web/fonts/*.ttf", "web/fonts/OFL.txt"]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchaudio = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

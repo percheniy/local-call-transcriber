@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!README.md
+!call_transcriber/
+!call_transcriber/**
+**/__pycache__/

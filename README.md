@@ -71,6 +71,6 @@ cd local-call-transcriber
 Очередь из терминала: `./transcribe "/путь/к/папке"`.
 Тесты: `uv run python -m unittest discover -s tests -v`.
 
-Источники моделей: [GigaAM](https://github.com/salute-developers/GigaAM) (MIT), [Sortformer v2.1](https://huggingface.co/nvidia/diar_streaming_sortformer_4spk-v2.1) (NVIDIA Open Model License). Код приложения — MIT. Веса скачиваются из официальных источников и проверяются по SHA-256. [uv](https://docs.astral.sh/uv/) управляет Python; [imageio-ffmpeg](https://pypi.org/project/imageio-ffmpeg/) поставляет FFmpeg.
+Источники моделей: [GigaAM](https://github.com/salute-developers/GigaAM) (MIT), [Sortformer v2.1](https://huggingface.co/nvidia/diar_streaming_sortformer_4spk-v2.1) (NVIDIA Open Model License). Код приложения — [GNU AGPL-3.0](LICENSE) с дополнительными условиями об обязательном указании автора ([раздел 7](ATTRIBUTION.md#лицензия-и-дополнительные-условия)). Веса скачиваются из официальных источников и проверяются по SHA-256. [uv](https://docs.astral.sh/uv/) управляет Python; [imageio-ffmpeg](https://pypi.org/project/imageio-ffmpeg/) поставляет FFmpeg.
 
 **Автор: [percheniy](https://github.com/percheniy) · [gridchin.ru](https://gridchin.ru) · [t.me/gridchin](https://t.me/gridchin).** При модернизации сохраняйте видимое указание автора в продукте и документации; при fork указывайте **percheniy в соавторах**. [Обязательная процедура, включая ИИ-агентов](ATTRIBUTION.md) · [Авторы](AUTHORS.md).

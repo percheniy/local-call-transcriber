@@ -18,3 +18,5 @@
 - Container ARM check failed on missing libgomp.so.1; install the required libgomp1 runtime library without changing the locked model dependencies.
 - Container ARM imports now pass. Actual inference revealed an unwritable Numba cache under the root-owned environment when running as the non-root app user; direct its JIT cache to /tmp/numba. Keep non-root execution and the same real MP3/WAV acceptance.
 - Cancellation cleanup now terminates the dedicated worker process group, including a running FFmpeg child. This closes a concrete orphan-decoder case while retaining per-recording process isolation. Native supported platforms and containers are POSIX.
+
+- Folder selection now immediately streams indexing progress and audio counts. Discovery uses its existing recursive traversal with throttled progress callbacks; unknown directory totals use indeterminate progress, followed by measured result checks. No second pre-count pass or simulated percentage.

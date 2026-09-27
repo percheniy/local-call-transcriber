@@ -5,6 +5,7 @@ if (token) sessionStorage.setItem('call-token', token);
 history.replaceState(null, '', location.pathname);
 let previousState = '';
 let busy = false;
+let indexing = false;
 let pickerMode = "native";
 let total = 0;
 
@@ -24,7 +25,7 @@ function error(message = '') {
 }
 function controls(active) {
   busy = active;
-  ['folder', 'start', 'browse', 'preview', 'parallel-mode'].forEach(id => { $(id).disabled = active; });
+  ['folder', 'start', 'browse', 'preview', 'parallel-mode'].forEach(id => { $(id).disabled = active || indexing; });
   $('cancel').hidden = !active;
 }
 function showPlan(plan) {
@@ -97,7 +98,7 @@ $('browse').addEventListener('click', async () => {
         result = await api('pick-mounted', {nonce});
       } finally { await handle.removeEntry(marker).catch(() => {}); }
     } else result = await api('pick-folder', {});
-    if (result.folder) { $('folder').value = result.folder; updateOutput(); }
+    if (result.folder) { $('folder').value = result.folder; updateOutput(); await indexFolder(); }
   } catch (e) { if (e.name !== 'AbortError') error(e.message); }
   finally { $('browse').disabled = busy; }
 });
@@ -107,15 +108,53 @@ function options() {
   const value = $('parallel-mode').value;
   return {folder: $('folder').value, parallel: value === 'auto' ? value : Number(value)};
 }
-$('preview').addEventListener('click', async () => {
-  controls(true); $('cancel').hidden = true; error();
+async function indexFolder() {
+  indexing = true; controls(false); error();
+  $('indexing').hidden = false;
+  $('indexing-progress').removeAttribute('value');
+  $('indexing-status').textContent = 'Индексация папки… Найдено аудиофайлов: 0';
+  $('count').textContent = 'Поиск…';
+  let reader;
   try {
-    const result = await api('preview', options());
-    showPlan(result.plan); $('count').textContent = `${result.total} найдено`;
-    $('status').textContent = result.total ? `К обработке: ${result.pending}. Готовые TXT будут пропущены.` : 'Записи не найдены. Выберите другую папку.';
-  } catch (e) { error(e.message); }
-  finally { controls(false); }
-});
+    const response = await fetch('/api/index', {method: 'POST', headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json'}, body: JSON.stringify(options())});
+    if (!response.ok) throw new Error((await response.json()).error || 'Не удалось начать индексацию.');
+    reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '', finished = false;
+    while (true) {
+      const chunk = await reader.read();
+      buffer += decoder.decode(chunk.value || new Uint8Array(), {stream: !chunk.done});
+      const lines = buffer.split('\n'); buffer = lines.pop();
+      for (const line of lines) {
+        if (!line) continue;
+        const event = JSON.parse(line);
+        if (event.stage === 'error') throw new Error(event.error);
+        $('count').textContent = `${event.found} найдено`;
+        if (event.stage === 'searching') {
+          $('indexing-status').textContent = `Индексация папки… Найдено аудиофайлов: ${event.found} · просмотрено файлов: ${event.scanned}`;
+        } else if (event.stage === 'checking') {
+          $('indexing-progress').value = event.total ? event.checked / event.total * 100 : 100;
+          $('indexing-status').textContent = `Найдено аудиофайлов: ${event.found} · проверено: ${event.checked} из ${event.total}`;
+        } else if (event.stage === 'done') {
+          finished = true; $('indexing-progress').value = 100;
+          $('indexing-status').textContent = `Найдено аудиофайлов: ${event.found} · к обработке: ${event.pending} · TXT уже есть: ${event.found - event.pending}`;
+          showPlan(event.plan);
+          $('status').textContent = event.found ? 'Индексация завершена. Можно запускать расшифровку.' : 'Аудиофайлы не найдены. Выберите другую папку.';
+        }
+      }
+      if (chunk.done) break;
+    }
+    if (!finished) throw new Error('Индексация прервана. Проверьте папку повторно.');
+  } catch (e) {
+    $('indexing-status').textContent = 'Индексация не завершена.';
+    $('indexing-progress').value = 0; $('count').textContent = '';
+    error(e.message);
+  } finally {
+    if (reader) { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+    indexing = false; controls(false);
+  }
+}
+$('preview').addEventListener('click', indexFolder);
 $('folder-form').addEventListener('submit', async event => {
   event.preventDefault(); error(); controls(true);
   try { showState(await api('start', options())); }
@@ -162,7 +201,7 @@ async function poll() {
   try {
     const state = await api('state');
     const serialized = JSON.stringify(state);
-    if (state.phase !== 'idle' && serialized !== previousState) { showState(state); previousState = serialized; }
+    if (!indexing && state.phase !== 'idle' && serialized !== previousState) { showState(state); previousState = serialized; }
   } catch (e) { error('Связь с локальным приложением потеряна. Проверьте, что оно запущено. ' + e.message); }
   setTimeout(poll, 1000);
 }
@@ -170,6 +209,7 @@ async function poll() {
   try {
     const info = await api('info'); pickerMode = info.picker; $('folder').value = info.folder; updateOutput();
     $('resource-title').textContent = `${info.resources.available_gb} ГБ свободно из ${info.resources.total_gb} ГБ · ${info.resources.cores} ядер CPU`;
+    if (info.folder) await indexFolder();
     poll();
   } catch (e) { error(e.message); $('resource-title').textContent = 'Откройте ссылку из терминала'; }
 })();

@@ -45,6 +45,49 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(len(result['recent']), 10)
         self.assertLess(len(json.dumps(result)), 25000)
 
+    def test_index_stream_reports_nested_audio_and_existing_results(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'nested').mkdir()
+            (root / 'call.mp3').touch()
+            (root / 'nested' / 'call.WAV').touch()
+            (root / 'notes.txt').touch()
+            (root / 'transcription').mkdir()
+            (root / 'transcription' / 'call.mp3.txt').write_text('existing')
+            request = urllib.request.Request(self.url + '/api/index',
+                data=json.dumps(dict(folder=str(root), parallel=2)).encode(),
+                headers={'Authorization': 'Bearer ' + self.server.token, 'Content-Type': 'application/json'})
+            with urllib.request.urlopen(request) as response:
+                events = [json.loads(line) for line in response]
+            self.assertEqual(events[0]['stage'], 'searching')
+            self.assertEqual(events[-1]['stage'], 'done')
+            self.assertEqual(events[-1]['found'], 2)
+            self.assertEqual(events[-1]['pending'], 1)
+            self.assertEqual(events[-1]['plan']['mode'], 2)
+            checked = [e for e in events if e['stage'] == 'checking']
+            self.assertEqual(checked[-1]['checked'], 2)
+            self.assertEqual(checked[-1]['total'], 2)
+
+    def test_index_flushes_progress_before_scan_finishes(self):
+        from unittest.mock import patch
+        release = threading.Event()
+        def scan(folder, progress):
+            progress(dict(stage='searching', found=7, scanned=9))
+            if not release.wait(3):
+                raise RuntimeError('Progress was buffered')
+            return []
+        with patch('call_transcriber.server.discover', side_effect=scan):
+            request = urllib.request.Request(self.url + '/api/index', data=b'{"folder":"test"}',
+                headers={'Authorization': 'Bearer ' + self.server.token})
+            try:
+                with urllib.request.urlopen(request, timeout=2) as response:
+                    first = json.loads(response.readline())
+                    self.assertEqual(first['found'], 7)
+                    release.set()
+                    self.assertEqual(json.loads(response.readline())['stage'], 'done')
+            finally:
+                release.set()
+
 
 if __name__ == '__main__':
     unittest.main()

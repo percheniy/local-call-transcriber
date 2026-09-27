@@ -21,12 +21,21 @@ from .runtime import GIB, ensure_models, ffmpeg
 EXTENSIONS = {'.mp3', '.wav', '.m4a', '.flac', '.ogg', '.opus', '.aac', '.aiff', '.aif', '.wma', '.mp4'}
 
 
-def discover(folder):
+def discover(folder, progress=None):
     if not isinstance(folder, (str, Path)) or not str(folder).strip():
         raise ValueError("Сначала выберите папку со звонками.")
     target = Path(folder).expanduser().resolve(strict=True)
     root = target if target.is_dir() else target.parent
     sources, errors = [], []
+    scanned = 0
+    last_report = 0
+    def report(stage, checked=0, total=None, force=False):
+        nonlocal last_report
+        now = time.monotonic()
+        if progress and (force or now - last_report >= .1):
+            progress(dict(stage=stage, found=len(sources), scanned=scanned, checked=checked, total=total))
+            last_report = now
+    report('searching', force=True)
     if target.is_file():
         if target.suffix.lower() not in EXTENSIONS:
             raise ValueError('Неподдерживаемый аудиоформат.')
@@ -38,12 +47,15 @@ def discover(folder):
             children[:] = sorted(name for name in children if name.lower() not in {'transcription', '.git', '.venv', 'node_modules'}
                                  and not (Path(directory) / name).is_symlink())
             for name in sorted(names):
+                scanned += 1
+                report("searching")
                 source = Path(directory) / name
                 if source.suffix.lower() in EXTENSIONS and not source.is_symlink():
                     sources.append(source)
     if errors:
         raise PermissionError('Не удалось прочитать все подпапки: ' + '; '.join(errors))
     jobs = []
+    report("checking", total=len(sources), force=True)
     for source in sources:
         output = source.parent / 'transcription' / (source.name + '.txt')
         if output.parent.is_symlink():
@@ -51,6 +63,8 @@ def discover(folder):
         jobs.append(dict(id=len(jobs), source=str(source), relative=str(source.relative_to(root)),
                          output=str(output), status='skipped' if output.exists() else 'pending',
                          stage='Уже есть TXT' if output.exists() else 'В очереди', percent=0, error='', warnings=[]))
+        report("checking", checked=len(jobs), total=len(sources))
+    report("checking", checked=len(jobs), total=len(sources), force=True)
     return jobs
 
 

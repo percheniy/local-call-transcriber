@@ -95,6 +95,29 @@ class Handler(BaseHTTPRequestHandler):
         except (OSError, ValueError, KeyError, IndexError) as error:
             self.send(400, dict(error=str(error)))
 
+    def index_folder(self, data):
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/x-ndjson; charset=utf-8')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Connection', 'close')
+        self.end_headers()
+        self.close_connection = True
+        def emit(event):
+            self.wfile.write((json.dumps(event, ensure_ascii=False) + '\n').encode())
+            self.wfile.flush()
+        try:
+            jobs = discover(data['folder'], progress=emit)
+            pending = sum(job['status'] == 'pending' for job in jobs)
+            emit(dict(stage='done', found=len(jobs), total=len(jobs), pending=pending,
+                      plan=plan(snapshot(), pending, parallel=data.get('parallel', 'auto'))))
+        except (BrokenPipeError, ConnectionResetError):
+            return
+        except Exception as error:
+            try:
+                emit(dict(stage='error', error=str(error)))
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
     def do_POST(self):
         if not self.allowed(api=True):
             return
@@ -103,7 +126,9 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 <= length <= 16_384:
                 raise ValueError('Слишком большой запрос.')
             data = json.loads(self.rfile.read(length) or b'{}')
-            if self.path == '/api/pick-folder':
+            if self.path == '/api/index':
+                self.index_folder(data)
+            elif self.path == '/api/pick-folder':
                 if self.server.container:
                     raise ValueError('Используйте системный выбор папки в браузере.')
                 if not self.server.picker_lock.acquire(blocking=False):

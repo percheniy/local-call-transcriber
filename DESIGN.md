@@ -94,6 +94,7 @@ Containers, path fields, empty states, and job rows use small corners and thin b
 
 - **Folder controls:** read-only source path with a native folder picker; destination is visually subordinate and dashed. The “Проверить папку” action is an underlined text button.
 - **Actions:** black primary and white secondary pills, at least 44px high. Secondary hover reverses to black. Disabled buttons reduce opacity to 0.45. Keyboard focus uses a visible offset outline; path focus outlines the containing field.
+- **Indexing:** selecting a folder immediately shows a bounded audio count and progress bar. Discovery is indeterminate until the total is known; checking existing results uses measured progress. The completed summary retains found, pending, and existing-TXT counts.
 - **Concurrency:** native select offers “Авто” and 1–5, with five slim worker indicators nearby in the processing heading.
 - **Status:** outlined pill and small dot; preparing, running, done, and error states show actual state.
 - **Progress and results:** outlined metric grid, green total progress, bordered job rows, and a scrollable result dialog. At most ten active and recent rows combined; journal shows at most ten events. No full-queue block.

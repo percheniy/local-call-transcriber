@@ -1,7 +1,5 @@
 # Local Call Transcriber
 
-**Автор: [percheniy](https://github.com/percheniy) · [gridchin.ru](https://gridchin.ru) · [t.me/gridchin](https://t.me/gridchin).** При модернизации сохраняйте видимое указание автора в продукте и документации; при fork указывайте **percheniy в соавторах**. [Обязательная процедура, включая ИИ-агентов](ATTRIBUTION.md) · [Авторы](AUTHORS.md).
-
 Локальная расшифровка русских звонков: **GigaAM v3 E2E RNNT + Sortformer v2.1**. Выберите папку в интерфейсе: приложение обработает MP3 и WAV, включая подпапки, и сохранит диалоги с метками `speaker 1` и `speaker 2`.
 
 [![Видео: Local Call Transcriber за 22 секунды](media/demo.jpg)](media/demo.mp4)

@@ -44,3 +44,38 @@ class SelectionTests(unittest.TestCase):
         run.return_value.stdout = '\n'
         self.assertIsNone(choose_folder())
         self.assertEqual(run.call_args.args[0][0], 'osascript')
+
+class CancellationTests(unittest.TestCase):
+    def test_cancel_reaps_worker_and_removes_owned_partial(self):
+        import subprocess
+        import sys
+        import time
+        from call_transcriber.batch import Batch
+        real_popen = subprocess.Popen
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'call.wav').touch()
+            script = root/'slow.py'
+            script.write_text('import sys,time,subprocess\nfrom pathlib import Path\nchild=subprocess.Popen([sys.executable,"-c","import time;time.sleep(60)"])\np=Path(sys.argv[1]);p.parent.mkdir(exist_ok=True);p.write_text(str(child.pid))\ntime.sleep(60)\n')
+            spawned = []
+            def spawn(command, **kwargs):
+                child = real_popen([sys.executable, str(script), command[-1]], **kwargs)
+                spawned.append(child)
+                return child
+            with patch('call_transcriber.batch.snapshot', side_effect=lambda *a: Resources(64*GIB,50*GIB,16,0,0)), patch('call_transcriber.batch.ensure_models', return_value=root), patch('call_transcriber.batch.audio_duration', return_value=1), patch('call_transcriber.batch.subprocess.Popen', side_effect=spawn):
+                batch=Batch(); batch.start(root, 2)
+                deadline=time.monotonic()+5
+                while not list(root.rglob('*.part')) and time.monotonic()<deadline:
+                    time.sleep(.02)
+                self.assertTrue(list(root.rglob('*.part')))
+                import psutil
+                child_pid=int(next(root.rglob('*.part')).read_text())
+                batch.cancel(); batch.thread.join(10)
+                try:
+                    self.assertEqual(psutil.Process(child_pid).status(), psutil.STATUS_ZOMBIE)
+                except psutil.NoSuchProcess:
+                    pass
+                self.assertFalse(batch.thread.is_alive())
+                self.assertTrue(all(child.poll() is not None for child in spawned))
+                self.assertFalse(list(root.rglob('*.part')))
+                self.assertEqual(batch.view()['phase'], 'cancelled')

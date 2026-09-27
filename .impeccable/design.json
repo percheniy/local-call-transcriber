@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-27T18:34:35.359817+00:00",
+  "title": "Design System: Гроза саппорта",
+  "extensions": {
+    "shadows": [
+      {
+        "name": "panel",
+        "value": "8px 8px 0 var(--red)",
+        "purpose": "Structural panel offset."
+      },
+      {
+        "name": "panel-mobile",
+        "value": "5px 5px 0 var(--red)",
+        "purpose": "Compact viewport offset."
+      },
+      {
+        "name": "dialog",
+        "value": "6px 6px 0 var(--red)",
+        "purpose": "Result dialog offset."
+      },
+      {
+        "name": "primary-hover",
+        "value": "4px 4px 0 var(--pink)",
+        "purpose": "Action feedback."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button",
+        "value": "box-shadow .15s, background-color .15s",
+        "purpose": "Only when reduced motion is not requested."
+      },
+      {
+        "name": "matrix",
+        "value": "50ms minimum drawing interval",
+        "purpose": "Decorative canvas; drawing stops with reduced motion or hidden document."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "650px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Implemented pill action.",
+      "html": "<button class=\"ds-primary\">Расшифровать</button>",
+      "css": ".ds-primary{font-family:Manrope,system-ui,sans-serif;font-size:13px;font-weight:700;min-height:44px;padding:0 18px;border:1px solid #000;border-radius:9999px;cursor:pointer;background:#000;color:#fff}.ds-primary:hover{box-shadow:4px 4px 0 var(--pink,#ff90e9);}.ds-primary:focus-visible{outline:3px solid #ad237f;outline-offset:3px}.ds-primary:active{transform:translate(2px,2px);box-shadow:none}.ds-primary:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Implemented pill action.",
+      "html": "<button class=\"ds-secondary\">Выбрать папку</button>",
+      "css": ".ds-secondary{font-family:Manrope,system-ui,sans-serif;font-size:13px;font-weight:700;min-height:44px;padding:0 18px;border:1px solid #000;border-radius:9999px;cursor:pointer;background:#fff;color:#000}.ds-secondary:hover{background:#000;color:#fff;}.ds-secondary:focus-visible{outline:3px solid #ad237f;outline-offset:3px}.ds-secondary:active{transform:translate(2px,2px);box-shadow:none}.ds-secondary:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}"
+    },
+    {
+      "name": "Path field",
+      "kind": "input",
+      "description": "Read-only local source path.",
+      "html": "<input class=\"ds-path\" readonly aria-label=\"Папка со звонками\" value=\"/Записи/Звонки\">",
+      "css": ".ds-path{font:13px ui-monospace,Menlo,Consolas,monospace;min-height:44px;padding:0 12px;border:1px solid #000;border-radius:4px;background:#fff;color:#000;max-width:100%}.ds-path:focus-visible{outline:2px solid var(--pink,#ff90e9);outline-offset:1px}"
+    },
+    {
+      "name": "Status badge",
+      "kind": "chip",
+      "description": "Outlined waiting status.",
+      "html": "<span class=\"ds-badge\"><i></i>Ожидает папку</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid #000;border-radius:9999px;font:500 13px Manrope,system-ui,sans-serif;color:#000;background:#fff}.ds-badge i{width:8px;height:8px;border-radius:50%;border:1px solid #000;background:#e5e5e5}"
+    },
+    {
+      "name": "Setup panel",
+      "kind": "card",
+      "refersTo": "setup-panel",
+      "description": "Quiet outlined setup surface.",
+      "html": "<section class=\"ds-setup\">Папка со звонками</section>",
+      "css": ".ds-setup{border:1px solid #000;border-radius:4px;background:var(--paper,#f4f4f0);padding:24px;font:14px Manrope,system-ui,sans-serif;color:#000}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Black canvas, red matrix, white utility panel",
+    "overview": "Preserve the user's supplied visual authority: `.work/design-reference/Расшифровка звонков.dc.html`, from `Сервис расшифровки звонков.zip`. The implemented surface is a compact local utility with strong black outlines, a red offset panel, and conversational Russian copy. This document records the implementation; it does not introduce a new visual direction.",
+    "keyCharacteristics": [
+      "Black canvas with decorative red matrix lettering.",
+      "White panel, crisp borders, pill actions, and locally bundled Manrope.",
+      "Compact, bounded operational feedback."
+    ],
+    "rules": [],
+    "dos": [
+      "Do preserve the supplied Russian title and subtitle.",
+      "Do keep paths readable and operational lists bounded.",
+      "Do preserve visible keyboard focus and reduced-motion behavior."
+    ],
+    "donts": [
+      "Don't replace the supplied canvas, panel, typography, or red offset with a new visual identity.",
+      "Don't add a full-queue block or decorative dashboard sections."
+    ]
+  }
+}

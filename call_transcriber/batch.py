@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -150,7 +151,7 @@ class Batch:
         partial = str(Path(job['output']).parent / ('.transcription-' + uuid.uuid4().hex + '.part'))
         command += ['--partial', partial]
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                   text=True, encoding='utf-8', errors='replace', env=env)
+                                   text=True, encoding='utf-8', errors='replace', env=env, start_new_session=True)
         tail = deque(maxlen=12)
         reader = threading.Thread(target=self._read, args=(job, process, tail), daemon=True)
         with self.lock:
@@ -162,14 +163,25 @@ class Batch:
         for entry in self.active.values():
             process = entry['process']
             if process.poll() is None:
-                process.terminate()
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
         for entry in self.active.values():
             process = entry['process']
             try:
                 process.wait(timeout=8)
             except subprocess.TimeoutExpired:
-                process.kill()
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
                 process.wait(timeout=5)
+            # A decoder child may outlive its worker; reap the entire owned process group.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
             entry['reader'].join(timeout=2)
             Path(entry['partial']).unlink(missing_ok=True)
             with self.lock:

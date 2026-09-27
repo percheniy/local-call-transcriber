@@ -34,7 +34,7 @@ git clone --branch v1.0.0 https://github.com/percheniy/local-call-transcriber.gi
    ```
 
 5. При наличии уже скачанных весов задай `CALL_TRANSCRIBER_MODELS`. Не отключай SHA-256-проверку.
-6. Запусти `./ui` или `uv run --frozen call-transcriber`; `--no-browser` отключает автоматическое открытие браузера.
+6. На Linux проверь наличие `zenity`, `kdialog` или tkinter. Если их нет, установи `zenity` штатным пакетным менеджером согласно полномочиям среды. Нативная macOS использует встроенное окно. Запусти `./ui` или `uv run --frozen call-transcriber`; `--no-browser` отключает автоматическое открытие браузера.
 7. Передай пользователю полную локальную ссылку с `#…` от текущего запуска. Не публикуй её в issue/Git: фрагмент содержит токен сеанса.
 
 FFmpeg поставляется в `imageio-ffmpeg`. CUDA, системный FFmpeg, OpenAI API и Hugging Face token не нужны.

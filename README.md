@@ -23,7 +23,7 @@ installer=$(mktemp) && curl -fsSL https://raw.githubusercontent.com/percheniy/lo
 docker run --rm -it -p 127.0.0.1:18765:18765 --mount type=bind,source=.,target=/calls --mount type=volume,source=call-transcriber-models,target=/models $(docker build -q https://github.com/percheniy/local-call-transcriber.git#v1.0.0)
 ```
 
-Одна строка работает в PowerShell и POSIX shell. Сначала Docker собирает приложение из публичного репозитория, затем запускает его. Откройте полную ссылку из терминала, включая `#…`, и выберите `/calls`. Требуется работающий Docker Desktop / Engine с Linux-контейнерами и минимум 8 ГБ выделенной RAM.
+Одна строка работает в PowerShell и POSIX shell. Сначала Docker собирает приложение из публичного репозитория, затем запускает его. Откройте полную ссылку из терминала, включая `#…`, и нажмите «Выбрать папку»: в Chrome или Edge откроется системное окно. Выберите подключённую папку звонков; контейнер сопоставит её с `/calls`. Требуется работающий Docker Desktop / Engine с Linux-контейнерами и минимум 8 ГБ выделенной RAM.
 
 Поддержка «любого компьютера» ограничена современными 64-битными настольными ОС и достаточными ресурсами: рекомендуется 8+ ГБ RAM, от 5 ГБ свободного диска для native-установки и 10 ГБ для Docker. Пять процессов требуют больше ресурсов. CUDA не нужна. Для Windows и Intel macOS предусмотрен Docker; нативный запуск на них не заявляется.
 

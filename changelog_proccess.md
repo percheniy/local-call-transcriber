@@ -20,3 +20,10 @@
 - Cancellation cleanup now terminates the dedicated worker process group, including a running FFmpeg child. This closes a concrete orphan-decoder case while retaining per-recording process isolation. Native supported platforms and containers are POSIX.
 
 - Folder selection now immediately streams indexing progress and audio counts. Discovery uses its existing recursive traversal with throttled progress callbacks; unknown directory totals use indeterminate progress, followed by measured result checks. No second pre-count pass or simulated percentage.
+
+## README video (play button)
+
+- Requirement: README video with a play button, per the user's `[![preview](img)](user-attachments URL)` pattern.
+- A: preview image linked to the uploaded attachment. GitHub replaces it with its native inline player, which has play controls.
+- B: the same preview linked to the repository `blob/main/media/demo.mp4` page. It was rejected because GitHub does not play the file there, and `raw` serves `application/octet-stream`, which downloads the file. B violated the "play" requirement.
+- Returned to A; this is not an oscillation. A is final because it is the only link that actually plays for visitors. Do not switch again.

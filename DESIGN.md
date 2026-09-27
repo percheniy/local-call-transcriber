@@ -1,5 +1,5 @@
 ---
-name: Гроза саппорта
+name: Транскрибаторус
 description: Local call transcription in the supplied black-and-red utility world.
 colors:
   ink: "#000"
@@ -55,7 +55,7 @@ components:
     padding: "24px"
 ---
 
-# Design System: Гроза саппорта
+# Design System: Транскрибаторус
 
 ## Overview
 
@@ -74,7 +74,7 @@ Red is the signature accent for the canvas and structural offset. Pink marks sel
 
 ## Typography
 
-Use the bundled Manrope weights for interface copy and the system monospace stack for paths, filenames, and event times. Headlines are bold and compact; metric values are light, tabular numerals. Labels use uppercase, 12px bold text with 0.04em tracking. Preserve the literal heading “Гроза саппорта v1337” and subtitle “Расшифрую что угодно. Даже разговоры с тещей.”
+Use the bundled Manrope weights for interface copy and the system monospace stack for paths, filenames, and event times. Headlines are bold and compact; metric values are light, tabular numerals. Labels use uppercase, 12px bold text with 0.04em tracking. Preserve the literal heading “Транскрибаторус” and subtitle “Встречи, интервью и звонки — в текст. Прямо на вашем компьютере.”
 
 ## Layout
 

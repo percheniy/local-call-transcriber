@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гроза саппорта · Расшифровка звонков</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script><script src="/matrix.js" defer></script></head>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Транскрибаторус · Расшифровка видео и аудио</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script><script src="/matrix.js" defer></script></head>
 <body>
 <!-- DESIGN AUTHORITY: user-supplied «Сервис расшифровки звонков.zip», Расшифровка звонков.dc.html.
 THESIS: Preserve the supplied Gridchin utility surface and connect it to real local inference.
@@ -10,13 +10,13 @@ FORM: User-pinned design; real counters and states replace the prototype's simul
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance -->
 <canvas id="matrix" aria-hidden="true"></canvas>
 <main>
-<header><div><h1>Гроза саппорта v1337</h1><p>Расшифрую что угодно. Даже разговоры с тещей.</p></div><span id="status-badge" class="badge"><i></i><span id="badge-text">Ожидает папку</span></span></header>
+<header><div><h1>Транскрибаторус</h1><p>Встречи, интервью и звонки — в текст. Прямо на вашем компьютере.</p></div><span id="status-badge" class="badge"><i></i><span id="badge-text">Ожидает папку</span></span></header>
 <section class="setup" aria-label="Настройка обработки"><form id="folder-form">
 <label for="folder">Папка со звонками</label>
 <div class="folder-row"><div class="path-field"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h7l2 3h9v11H3V6Z"/></svg><input id="folder" name="folder" readonly placeholder="Папка не выбрана" autocomplete="off" spellcheck="false" required><span id="count"></span></div><button id="browse" type="button" class="secondary">Выбрать папку</button><button id="start" type="submit">Расшифровать</button><button id="cancel" type="button" hidden>Остановить</button></div>
 <div id="indexing" hidden role="status" aria-live="polite"><p id="indexing-status"></p><progress id="indexing-progress" max="100" aria-label="Прогресс индексации"></progress></div>
 <label for="output-folder" class="output-label">Транскрипты сейчас сохраняются в</label><div class="path-field destination"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4v10h14m-5-5 5 5-5 5"/></svg><input id="output-folder" readonly tabindex="-1" placeholder="Появится после выбора папки"><span>.txt</span></div>
-<div class="folder-help"><span>MP3 и WAV · все вложенные папки</span><button id="preview" type="button" class="text-button">Проверить папку</button></div>
+<div class="folder-help"><span>Аудио и видео · все вложенные папки</span><button id="preview" type="button" class="text-button">Проверить папку</button></div>
 <label for="parallel-mode">Записей одновременно</label><select id="parallel-mode"><option value="auto">Авто</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select><div class="resource"><strong id="resource-title">Проверяем компьютер…</strong><p id="resource-detail">Автоматически от 1 до 5 записей одновременно.</p></div>
 </form><p id="error" class="error" role="alert" hidden></p></section>
 <section id="metrics" hidden aria-label="Прогресс очереди"><div class="stats"><div><span>Найдено звонков</span><strong id="total-count">0</strong><small id="audio-hours">—</small></div><div><span>Готово</span><strong id="done-count">0</strong><small id="percent-text">0%</small></div><div><span>В очереди</span><strong id="queued-count">0</strong><small id="errors-text">без ошибок</small></div><div><span>Осталось</span><strong id="eta">—</strong><small>при текущей скорости</small></div></div><progress id="total-progress" value="0" max="100" aria-label="Общий прогресс"></progress></section>

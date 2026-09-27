@@ -4,7 +4,7 @@
 
 Транскрибаторус превращает записи встреч, интервью и звонков в аккуратный текстовый диалог по ролям. Выберите папку — остальное он сделает сам. Без облака. Без API-ключей. В основе — **GigaAM v3 E2E RNNT + Sortformer v2.1**.
 
-[![Смотреть ролик: Транскрибаторус за 22 секунды](media/demo-preview.png)](https://github.com/user-attachments/assets/e9b75252-e622-49d0-b13e-9d56c849be77)
+[![Смотреть ролик: Транскрибаторус за 22 секунды](media/demo-preview.png)](https://github.com/percheniy/local-call-transcriber/blob/main/media/demo.mp4)
 
 *Ролик сгенерирован автоматически с помощью ИИ.*
 

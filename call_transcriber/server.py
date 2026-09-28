@@ -86,6 +86,7 @@ class Handler(BaseHTTPRequestHandler):
                 static = {'/': ('index.html', 'text/html; charset=utf-8'),
                           '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
                           '/style.css': ('style.css', 'text/css; charset=utf-8'),
+                          '/matrix-lines.js': ('matrix-lines.js', 'text/javascript; charset=utf-8'),
                           '/matrix.js': ('matrix.js', 'text/javascript; charset=utf-8')}
                 if url.path not in static:
                     self.send(404, dict(error='Не найдено'))

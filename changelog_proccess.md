@@ -27,3 +27,9 @@
 - A: preview image linked to the uploaded attachment. GitHub replaces it with its native inline player, which has play controls.
 - B: the same preview linked to the repository `blob/main/media/demo.mp4` page. It was rejected because GitHub does not play the file there, and `raw` serves `application/octet-stream`, which downloads the file. B violated the "play" requirement.
 - Returned to A; this is not an oscillation. A is final because it is the only link that actually plays for visitors. Do not switch again.
+
+## Background matrix copy
+
+- Requirement: replace meaningless matrix glyphs with readable background lines supplied by the user (pipeline-flavoured system messages, jokes, continuation series, rare Matrix easter eggs, dynamic templates).
+- Decision: horizontal typed lines on the same black/red canvas. Copy lives in `web/matrix-lines.js` (single lines and series; tech log ≈70%, humor ≈25%, eggs every 30–60 s). Lines are placed only in areas the panel leaves visible and wrapped to that width; shuffle bags avoid repeats.
+- Browser check found two placement defects: an unrelated line could sit directly under a series, and right-hand lines ran under the scrollbar. Fixed with a blank-row gap between messages and the `clientWidth` right edge. No reversals.

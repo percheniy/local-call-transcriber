@@ -64,7 +64,7 @@ components:
 Preserve the user's supplied visual authority: `.work/design-reference/Расшифровка звонков.dc.html`, from `Сервис расшифровки звонков.zip`. The implemented surface is a compact local utility with strong black outlines, a red offset panel, and conversational Russian copy. This document records the implementation; it does not introduce a new visual direction.
 
 **Key Characteristics:**
-- Black canvas with decorative red matrix lettering.
+- Black canvas with a red matrix of typed background lines: plausible pipeline log, humorous series, and rare Matrix easter eggs, placed in the areas the panel leaves visible. Copy lives in `web/matrix-lines.js`.
 - White panel, crisp borders, pill actions, and locally bundled Manrope.
 - Compact, bounded operational feedback.
 

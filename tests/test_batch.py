@@ -86,6 +86,51 @@ class SchedulerTests(unittest.TestCase):
                 self.assertTrue(all(j['status'] == 'skipped' for j in batch.view()['jobs']))
                 self.assertFalse(list(root.rglob('*.json')))
 
+    def test_temp_cleanup_io_error_does_not_freeze_queue(self):
+        real_popen = subprocess.Popen
+        real_unlink = Path.unlink
+        def flaky_unlink(path, *args, **kwargs):
+            if path.name.endswith('.part'):
+                raise OSError(5, 'Input/output error', str(path))
+            return real_unlink(path, *args, **kwargs)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for i in range(2):
+                (root / f'{i}.wav').touch()
+            script = root / 'fake_worker.py'
+            script.write_text('''import sys,json\nfrom pathlib import Path\np=Path(sys.argv[1]);p.parent.mkdir(exist_ok=True);p.write_text("speaker 1: Test")\nprint('CALL_EVENT '+json.dumps(dict(event='done',warnings=[])),flush=True)\n''')
+            def spawn(command, **kwargs):
+                return real_popen([sys.executable, str(script), command[4]], **kwargs)
+            with patch('call_transcriber.batch.snapshot', side_effect=lambda *a: Resources(64*GIB, 50*GIB, 16, 0, 0)), \
+                 patch('call_transcriber.batch.ensure_models', return_value=root), \
+                 patch('call_transcriber.batch.audio_duration', return_value=1), \
+                 patch('call_transcriber.batch.subprocess.Popen', side_effect=spawn), \
+                 patch.object(Path, 'unlink', flaky_unlink):
+                batch = Batch()
+                batch.start(root)
+                batch.thread.join(15)
+                self.assertFalse(batch.thread.is_alive())
+                state = batch.view()
+                self.assertEqual(state['phase'], 'done', state['message'])
+                self.assertTrue(all(j['status'] == 'done' for j in state['jobs']), state)
+
+    def test_failed_cleanup_still_leaves_terminal_phase(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'a.wav').touch()
+            with patch.object(Batch, '_execute', side_effect=RuntimeError('disk failed')), \
+                 patch.object(Batch, '_stop_active', side_effect=OSError(5, 'Input/output error')):
+                batch = Batch()
+                batch.start(root)
+                batch.thread.join(5)
+                state = batch.view()
+                self.assertEqual(state['phase'], 'error')
+                self.assertEqual(state['message'], 'disk failed')
+                self.assertEqual(state['active'], 0)
+                self.assertTrue(all(j['status'] == 'cancelled' for j in state['jobs']), state)
+                batch.start(root)  # a new run is accepted after the failure
+                batch.thread.join(5)
+
 
 if __name__ == '__main__':
     unittest.main()

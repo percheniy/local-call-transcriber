@@ -68,6 +68,14 @@ def discover(folder, progress=None):
     return jobs
 
 
+def discard(path):
+    # A flaky volume must not abort the whole queue over a hidden temp file.
+    try:
+        Path(path).unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
 def audio_duration(path):
     result = subprocess.run([ffmpeg(), '-nostdin', '-hide_banner', '-i', str(path)],
                             stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, errors='replace', timeout=30)
@@ -197,7 +205,7 @@ class Batch:
             except ProcessLookupError:
                 pass
             entry['reader'].join(timeout=2)
-            Path(entry['partial']).unlink(missing_ok=True)
+            discard(entry['partial'])
             with self.lock:
                 entry['job'].update(status='cancelled', stage='Остановлено')
         self.active.clear()
@@ -206,12 +214,17 @@ class Batch:
         try:
             self._execute()
         except Exception as error:
-            self._stop_active()
-            with self.lock:
-                for job in self.state['jobs']:
-                    if job['status'] == 'pending':
-                        job.update(status='cancelled', stage='Не запущено')
-            self.update(phase='cancelled' if self.cancelled.is_set() else 'error', active=0, message=str(error))
+            # Always leave a terminal phase, or the UI stays locked on a dead queue.
+            try:
+                self._stop_active()
+            finally:
+                with self.lock:
+                    for job in self.state['jobs']:
+                        if job['status'] == 'pending':
+                            job.update(status='cancelled', stage='Не запущено')
+                        elif job['status'] == 'running':
+                            job.update(status='cancelled', stage='Остановлено')
+                self.update(phase='cancelled' if self.cancelled.is_set() else 'error', active=0, message=str(error))
 
     def _execute(self):
         pending = [job for job in self.state['jobs'] if job['status'] == 'pending']
@@ -269,7 +282,7 @@ class Batch:
                     code = process.poll()
                     if code is not None:
                         entry['reader'].join(timeout=3)
-                        Path(entry['partial']).unlink(missing_ok=True)
+                        discard(entry['partial'])
                         job = entry['job']
                         peak = max(peak, entry['peak'])
                         with self.lock:

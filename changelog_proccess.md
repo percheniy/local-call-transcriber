@@ -38,3 +38,9 @@
 
 - Defect: opening `http://127.0.0.1:<port>/` without `#token` (new tab, bookmark, typed address) sent no token, so every API call returned 401 «Откройте ссылку, напечатанную в терминале при запуске.» and folder selection failed.
 - Fix: the server embeds the token in the served page, only after the existing loopback Host/Origin check; app.js prefers it over the fragment. Cross-site pages still cannot read the page or call the API. Verified: bare URL loads without errors, API without token still returns 401, new test covers the foreign Host rejection.
+
+## Queue frozen after a disk I/O error
+
+- Defect: on a large queue on an external drive, the volume returned `Errno 5` while a finished worker's hidden `.part` file was being removed. The exception went to `_run`, whose handler removed the same kind of file again and raised a second error. The batch thread died with the state still `running`: «Остановить» only set a flag that nothing read, and «Расшифровать» stayed disabled. Only a server restart helped.
+- Fix: temp `.part` removal is best-effort (`discard`), and the `_run` error handler reaches a terminal phase in `finally` even if process cleanup fails, marking pending/running jobs cancelled. Queue architecture unchanged.
+- Verified: two new tests fail on the previous code (`'running' != 'done'`, `'preparing' != 'error'`) and pass now; the full suite passes (23 tests). Live server on :57205 was relaunched; start → cancel through the API reached `cancelled` with no workers left.

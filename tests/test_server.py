@@ -34,6 +34,13 @@ class ServerTests(unittest.TestCase):
         with self.request({'Authorization':'Bearer '+self.server.token}) as response:
             self.assertEqual(json.load(response)['phase'], 'idle')
 
+    def test_page_carries_token_only_for_loopback_host(self):
+        with urllib.request.urlopen(self.url + '/') as response:
+            self.assertIn(f'content="{self.server.token}"', response.read().decode())
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            urllib.request.urlopen(urllib.request.Request(self.url + '/', headers={'Host': 'attacker.example'}))
+        self.assertEqual(error.exception.code, 403)
+
     def test_snapshot_bounded_for_ten_thousand_jobs(self):
         batch = Batch()
         template = dict(status='done', percent=100, relative='call.wav', id=0, error='', warnings=[])

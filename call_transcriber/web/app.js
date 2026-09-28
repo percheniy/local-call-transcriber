@@ -1,6 +1,6 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
-const token = location.hash.slice(1) || sessionStorage.getItem('call-token') || '';
+const token = document.querySelector('meta[name=call-token]')?.content || location.hash.slice(1) || sessionStorage.getItem('call-token') || '';
 if (token) sessionStorage.setItem('call-token', token);
 history.replaceState(null, '', location.pathname);
 let previousState = '';

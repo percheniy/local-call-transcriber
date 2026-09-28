@@ -92,7 +92,12 @@ class Handler(BaseHTTPRequestHandler):
                     self.send(404, dict(error='Не найдено'))
                     return
                 name, mime = static[url.path]
-                self.send(200, (WEB / name).read_bytes(), mime)
+                body = (WEB / name).read_bytes()
+                if name == 'index.html':
+                    # allowed() already pinned Host/Origin to loopback, so only this app's page can read it.
+                    body = body.replace(b'<meta name="call-token" content="">',
+                                        f'<meta name="call-token" content="{self.server.token}">'.encode())
+                self.send(200, body, mime)
         except (OSError, ValueError, KeyError, IndexError) as error:
             self.send(400, dict(error=str(error)))
 

@@ -33,3 +33,8 @@
 - Requirement: replace meaningless matrix glyphs with readable background lines supplied by the user (pipeline-flavoured system messages, jokes, continuation series, rare Matrix easter eggs, dynamic templates).
 - Decision: horizontal typed lines on the same black/red canvas. Copy lives in `web/matrix-lines.js` (single lines and series; tech log ≈70%, humor ≈25%, eggs every 30–60 s). Lines are placed only in areas the panel leaves visible and wrapped to that width; shuffle bags avoid repeats.
 - Browser check found two placement defects: an unrelated line could sit directly under a series, and right-hand lines ran under the scrollbar. Fixed with a blank-row gap between messages and the `clientWidth` right edge. No reversals.
+
+## Token without the link fragment
+
+- Defect: opening `http://127.0.0.1:<port>/` without `#token` (new tab, bookmark, typed address) sent no token, so every API call returned 401 «Откройте ссылку, напечатанную в терминале при запуске.» and folder selection failed.
+- Fix: the server embeds the token in the served page, only after the existing loopback Host/Origin check; app.js prefers it over the fragment. Cross-site pages still cannot read the page or call the API. Verified: bare URL loads without errors, API without token still returns 401, new test covers the foreign Host rejection.
